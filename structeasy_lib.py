@@ -100,7 +100,7 @@ def plot_model(nodes_db, elements_db, show_numbers=False, show_tags=False, color
         x=node_x, y=node_y, z=node_z,
         mode='markers+text' if show_numbers or show_tags else 'markers',
         marker=dict(size=8, color=node_color),  # Use node_color for nodes
-        text=[f'{nnumber}<br>Tag: {node.tag}' if show_tags else str(nnumber) for nnumber, node in nodes_db.items()] if show_numbers else None,
+        text=[f'{nnumber}<br>Tag: {node.tag}' if show_tags else str(nnumber) for nnumber, node in nodes_db.items()] if show_numbers or show_tags else None,
         textposition='middle right',
         textfont=dict(color=node_color),
         showlegend=show_legend
@@ -167,6 +167,7 @@ def plot_model(nodes_db, elements_db, show_numbers=False, show_tags=False, color
         fig.write_html(filename)
 
 ## OPENSEES SPECIFIC FUNCTIONS
+
 def start_model(typology):
     """
     This function let you to easily initialize the OpenseesPy model by calling:
@@ -231,3 +232,17 @@ def material_tester(matTag, strain, title='Stress-Strain Behavior', scaleStress=
     except:
         print('Please check material and openseespy definition or matplotlib library')
 
+def node_constrainTag(nodes, tag, fix_list):
+    """
+    This function can help to insert restraint in nodes if created with import_gmsh function.
+    Input:
+    - nodes = nodes dictionary created by import_gmsh
+    - tag = physical tag of the group of node you want to constrain
+    (Please if there are not physical tag, do not use this function)
+    - fix_list = [0,...,1] fix list intended by openseespy
+    """
+    from openseespy.opensees import fix
+    for n in nodes:
+        if nodes[n].tag == tag:
+            fix(nodes[n].nnumber, *fix_list)
+    print('Base Node Fixed')
