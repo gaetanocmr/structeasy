@@ -165,3 +165,69 @@ def plot_model(nodes_db, elements_db, show_numbers=False, show_tags=False, color
     # Save the plot to an HTML file if required
     if save_html:
         fig.write_html(filename)
+
+## OPENSEES SPECIFIC FUNCTIONS
+def start_model(typology):
+    """
+    This function let you to easily initialize the OpenseesPy model by calling:
+    start_model('2d') # for 2d problems
+    start_model('3d') # for 3d problems
+    """
+    from openseespy.opensees import wipe, model
+    """Initialize opensees Model
+    type = '2d'
+    type = '3d'
+    """
+    if typology == '3d':
+        wipe()
+        model('basic', '-ndm', 3 ,'-ndf', 6) # Define space (3D) and DOF (6 degrees)
+        print('3d model initialized')
+    elif typology == '2d':
+        wipe()
+        model('basic', '-ndm', 2 ,'-ndf', 3) # Define space (3D) and DOF (6 degrees)
+        print('2d model initialized')
+    else:
+        print()
+        raise NameError('-- Not valid model type, try "2d" or "3d" --')
+
+def create_nodes(nodes):
+    """
+    Given a node dictionary from import_gmsh function, this function will generate nodes inside the openseespy model
+    """
+    from openseespy.opensees import node
+    for n in nodes:
+        node(n, *nodes[n].coord)
+    print('Structure nodes genereted on OpenSeespy')
+
+def material_tester(matTag, strain, title='Stress-Strain Behavior', scaleStress=1):
+    """
+    This is a simple function to test material in OpenSeesPy:
+    matTag: material tag implemented
+    strain: list of strains
+    title: string title of the plot
+    scaleStress: if you need to convert output stresses in a specific unit
+
+    N.B. The function will automatically plot the stress-strain graph
+
+                                        Gaetano Camarda 2022
+                                        University of Palermo
+                                        v.1.0
+    """
+    import numpy as np
+    try:
+        from openseespy.opensees import testUniaxialMaterial, getStress, setStrain
+        from matplotlib.pyplot import grid, plot, subplots
+        testUniaxialMaterial(matTag)
+        stress = []
+        for eps in strain:
+            setStrain(eps)
+            stress.append(getStress())
+        fig, ax = subplots(dpi=120)
+        ax.set_title(title + ' | Material Tag: ' + str(matTag))
+        ax.plot(strain, np.array(stress) / scaleStress, color='#45818e')
+        ax.grid(linestyle='--', color='#e2e2e2')
+        ax.set_xlabel('Strain')
+        ax.set_ylabel('Stress')
+    except:
+        print('Please check material and openseespy definition or matplotlib library')
+
